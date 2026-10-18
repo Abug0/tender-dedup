@@ -1,0 +1,31 @@
+# 数据文件（原始数据不公开）
+*.json
+*.jsonl
+*.csv
+*.xlsx
+*.db
+*.sqlite
+data/
+raw/
+
+# 实现代码（本仓库不包含实现）
+*.py
+*.so
+*.pyd
+!setup.py
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 环境与密钥
+.env
+*.key
+
+# 编辑器
+.vscode/
+.idea/
+.DS_Store
+
