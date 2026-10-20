@@ -179,7 +179,112 @@ SimHash 本来最适合这个数据量级——把整篇压成一个指纹，快
 
 ---
 
-## 六、合作与联系
+## 六、在线试用
+
+部署了一个**单对判定**接口，可以直接调用看效果。
+
+```
+POST http://123.57.204.194:9099/deplicate
+Content-Type: application/json
+```
+
+### 入参
+
+请求体为 JSON，两个字段：
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `data1` | object | 是 | 第一条公告 |
+| `data1.page` | string | 是 | 公告 HTML 全文，UTF-8 |
+| `data2` | object | 是 | 第二条公告 |
+| `data2.page` | string | 是 | 同上 |
+
+`page` 直接传抓下来的原始 HTML 即可——带 `<html>`/`<body>`、带导航页脚都没关系，服务端会自行剥离标签。传纯文本也可以。
+
+```bash
+curl -X POST http://123.57.204.194:9099/deplicate \
+  -H "Content-Type: application/json" \
+  -d '{"data1":{"page":"<html><body>Project No: 21A00222, Amount: 30000</body></html>"},"data2":{"page":"<html><body>Project No: 21A00222, Amount: 30000</body></html>"}}'
+```
+
+> **正文含中文时**，Windows 终端用 `-d` 直接传参会破坏 UTF-8 编码，返回 400。
+> 改为写入文件再传：
+>
+> ```bash
+> cat > payload.json <<'EOF'
+> {"data1":{"page":"<html><body>项目编号：21A00222 中标金额：30000元</body></html>"},
+>  "data2":{"page":"<html><body>项目编号：21A00222 中标金额：30000元</body></html>"}}
+> EOF
+>
+> curl -X POST http://123.57.204.194:9099/deplicate \
+>   -H "Content-Type: application/json" --data-binary @payload.json
+> ```
+
+### 出参
+
+**成功**（HTTP 200）
+
+```json
+{"result": true}
+```
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `result` | boolean | `true` 判定为重复，`false` 判定为不重复 |
+
+**失败**（HTTP 4xx）
+
+```json
+{"error": "invalid request"}
+```
+
+| 状态码 | `error` 值 | 含义 |
+|---|---|---|
+| 400 | `invalid request` | 不是合法 JSON，或字段缺失 / 类型不对 |
+| 401 | `unauthorized` | 令牌错误（默认未启用） |
+| 413 | `payload too large` | 超过 512 KB（压缩前后同一上限） |
+| 415 | `unsupported content-encoding` | 不支持的压缩方式 |
+| 429 | `rate limit exceeded` | 触发限流，响应头带 `Retry-After: 1` |
+
+### 支持 gzip
+
+请求体大于 30 KB 时建议压缩，实测端到端快 30% 左右：
+
+```python
+import gzip, json, urllib.request
+
+payload = {"data1": {"page": html1}, "data2": {"page": html2}}
+body = gzip.compress(json.dumps(payload, ensure_ascii=False).encode())
+
+req = urllib.request.Request(
+    "http://123.57.204.194:9099/deplicate",
+    data=body,
+    headers={
+        "Content-Type": "application/json",
+        "Content-Encoding": "gzip",
+    },
+)
+```
+
+不压缩时行为完全不变——`Content-Encoding` 头留空即可。
+
+> Python 客户端建议用 `ensure_ascii=False`，中文不转义成 `\uXXXX`，体积再小 6%。
+
+### 限制
+
+| 项 | 限制 | 超出时 |
+|---|---|---|
+| 单 IP | 20 次/秒，突发 40 次 | `429` |
+| 全局 | 300 次/秒 | `429` |
+| 请求体 | 512 KB（压缩前后同一上限） | `413` |
+
+### 说明
+
+这个接口**只做单对判定**——不含数据存储、不含分桶预筛，也不处理除了判重以外的任何环节。它的作用是让你用自己手上的数据快速验证判定效果，不是可直接上生产的产品形态。
+
+---
+
+## 七、合作与联系
 
 如果你在做招投标 / 政府采购数据，遇到下面这类问题，可以直接联系：
 
