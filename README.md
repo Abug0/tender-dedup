@@ -1,5 +1,7 @@
 # 招投标公告跨源去重
 
+> Cross-source deduplication of Chinese tender / procurement announcements
+
 同一份招标公告会同时出现在多个平台上：省级公共资源交易中心、市级平台、行业垂直网站、代理机构官网、央企自建采购平台等等。
 
 抓下来以后，正文里混着各家自己的导航和页脚，字段有的缺一半；公告本身短的时候，这些网站外壳反而占了大半篇幅。
@@ -7,6 +9,8 @@
 人可以通过项目编号等信息判断是否同一条公告。但要让机器判断，则是另一回事：先是没有一个能直接用的判据，其次是数据量上来之后，准确率和计算成本之间需要进行权衡。
 
 本项目解决这个问题。
+
+**关键词**：招投标数据 · 招标公告去重 · 政府采购公告 · 跨源去重 · 近重复检测 · 记录链接 · 数据质量
 
 > **核心实现未开源。** 本仓库公开的是问题定义、方法思路、评测口径与实测结果，不含实现代码。
 
@@ -301,3 +305,13 @@ req = urllib.request.Request(
 
 - 微信：`rtn555`
 - 邮箱：`awei33@qq.com`
+
+---
+
+## English Summary
+
+A cross-source deduplication problem for **Chinese tender and procurement announcements**. The same notice is republished across 120+ government and commercial platforms, each with its own site chrome, field structure and formatting — so byte-level fingerprints fail (re-publishing always changes bytes) and full-text similarity fails too (boilerplate dominates the text, while the identifying content — project codes, purchasers, amounts — is sparse and noisy to extract).
+
+This repository documents the problem definition, the evaluation methodology, and measured results on 1,000 manually labeled pairs: **91.8% recall / 90.6% precision**. The implementation is not open source. A live single-pair API is available for evaluation — see section 6.
+
+**Keywords**: tender data, bid announcement, procurement, cross-source deduplication, near-duplicate detection, record linkage, data quality, Chinese NLP
